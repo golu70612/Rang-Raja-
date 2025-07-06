@@ -1,0 +1,92 @@
+
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <title>Rang Raja Order</title>
+  <script src="https://checkout.razorpay.com/v1/checkout.js"></script>
+</head>
+<body>
+  <h2>ऑर्डर फॉर्म</h2>
+  <form id="orderForm">
+    <label>नाम:</label><br>
+    <input type="text" id="name" required><br><br>
+
+    <label>मोबाइल नंबर:</label><br>
+    <input type="text" id="phone" required><br><br>
+
+    <label>पता:</label><br>
+    <textarea id="address" required></textarea><br><br>
+
+    <label>प्रोडक्ट चुनें:</label><br>
+    <select id="product" required>
+      <option value="Sky Grey Cargo Pant - 800">Sky Grey Cargo Pant - ₹800</option>
+      <option value="Smart Fit Cargo Pant - 1300">Smart Fit Cargo Pant - ₹1300</option>
+    </select><br><br>
+
+    <label>पेमेंट का तरीका चुनें:</label><br>
+    <input type="radio" name="payment" value="online" checked> ऑनलाइन पेमेंट<br>
+    <input type="radio" name="payment" value="cod"> कैश ऑन डिलीवरी (COD)<br><br>
+
+    <button type="button" onclick="submitForm()">ऑर्डर करें</button>
+  </form>
+
+  <script>
+    function submitForm() {
+      const name = document.getElementById('name').value;
+      const phone = document.getElementById('phone').value;
+      const address = document.getElementById('address').value;
+      const product = document.getElementById('product').value;
+      const paymentMethod = document.querySelector('input[name="payment"]:checked').value;
+
+      if (paymentMethod === 'cod') {
+        // Cash on Delivery logic
+        const data = { name, phone, address, product, paymentMethod: "COD" };
+
+        fetch("order.php", {
+          method: "POST",
+          headers: {'Content-Type': 'application/json'},
+          body: JSON.stringify(data)
+        })
+        .then(res => res.text())
+        .then(msg => alert("ऑर्डर सफलतापूर्वक लिया गया!\n" + msg));
+      } else {
+        // Online Payment logic
+        const amount = product.includes('800') ? 80000 : 130000;
+
+        var options = {
+          "key": "RAZORPAY_KEY_HERE", // अपने Razorpay key से बदलें
+          "amount": amount,
+          "currency": "INR",
+          "name": "Rang Raja",
+          "description": product,
+          "handler": function (response) {
+            const data = {
+              razorpay_payment_id: response.razorpay_payment_id,
+              name, phone, address, product,
+              paymentMethod: "Online"
+            };
+
+            fetch("order.php", {
+              method: "POST",
+              headers: {'Content-Type': 'application/json'},
+              body: JSON.stringify(data)
+            })
+            .then(res => res.text())
+            .then(msg => alert("पेमेंट सफल!\n" + msg));
+          },
+          "prefill": {
+            "name": name,
+            "contact": phone
+          },
+          "theme": {
+            "color": "#007bff"
+          }
+        };
+        var rzp = new Razorpay(options);
+        rzp.open();
+      }
+    }
+  </script>
+</body>
+</html>
